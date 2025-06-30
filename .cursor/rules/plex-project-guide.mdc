@@ -1,0 +1,125 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Plex Payment Module - Project Guide
+
+## Project Overview
+Plex is an internal payment module for React Native/Expo that detects installed payment apps, determines country context, and provides secure payment UI integration. The project is currently in early development phase (v0.1.0).
+
+## Project Structure & Key Files
+
+### Core Architecture Files
+- [package.json](mdc:package.json) - Main package configuration for the Expo module
+- [src/index.ts](mdc:src/index.ts) - Main module exports and entry point
+- [src/Plex.types.ts](mdc:src/Plex.types.ts) - TypeScript type definitions (needs major updates)
+- [src/PlexModule.ts](mdc:src/PlexModule.ts) - JavaScript interface to native modules
+- [README.md](mdc:README.md) - Comprehensive project documentation and implementation plan
+- [TODO.md](mdc:TODO.md) - Detailed task list organized by sprints
+
+### Native Implementation
+- [android/src/main/java/com/anuvaya/plex/PlexModule.kt](mdc:android/src/main/java/com/anuvaya/plex/PlexModule.kt) - Android native module (currently template)
+- [ios/PlexModule.swift](mdc:ios/PlexModule.swift) - iOS native module (currently template)
+- [android/src/main/java/com/anuvaya/plex/PlexView.kt](mdc:android/src/main/java/com/anuvaya/plex/PlexView.kt) - Android native view component
+- [ios/PlexView.swift](mdc:ios/PlexView.swift) - iOS native view component
+
+### Example & Testing
+- [example/App.tsx](mdc:example/App.tsx) - Example app demonstrating current functionality
+- [example/package.json](mdc:example/package.json) - Example app dependencies
+
+## Current State
+The project currently contains:
+- **Basic Expo module template** with native Android/iOS bridge
+- **Simple web view functionality** for demonstration
+- **Cross-platform build configuration** (Android/iOS/Web)
+- **Working example app** with basic module usage
+
+## Development Goals
+Transform this basic template into a comprehensive payment module that:
+1. **Detects installed payment apps** on user devices
+2. **Identifies country/locale context** for regional customization
+3. **Provides secure payment recommendations** with app verification
+4. **Delivers payment app icons and metadata** for UI integration
+5. **Ensures security and privacy compliance** throughout
+
+## Key Development Areas
+
+### Payment App Detection
+- **Android**: Use PackageManager to query installed apps against payment app database
+- **iOS**: Use URL schemes and app detection (within iOS privacy limitations)
+- **Database**: Comprehensive payment app registry by region (UPI, wallets, cards, etc.)
+
+### Security Implementation
+- **App Verification**: Signature verification, integrity checks, malware detection
+- **Device Security**: Root/jailbreak detection, security scoring
+- **Privacy Compliance**: GDPR, CCPA, minimal data collection
+
+### Regional Context
+- **Country Detection**: Device locale, SIM card, network provider, IP geolocation fallback
+- **Currency Mapping**: Country-to-currency relationships
+- **Payment Preferences**: Regional payment method popularity and availability
+
+## Implementation Strategy
+The project follows a 6-sprint development plan:
+1. **Sprint 1-2**: Android core implementation and TypeScript updates
+2. **Sprint 3-4**: iOS implementation and cross-platform consistency
+3. **Sprint 5**: Location/context detection and regional preferences
+4. **Sprint 6**: Enhanced security features and device assessment
+5. **Sprint 7**: Web support and performance optimization
+6. **Sprint 8**: Testing, documentation, and release preparation
+
+## Important Technical Notes
+
+### Current Limitations
+- **Template Code**: Current native modules are basic templates with placeholder functionality
+- **Missing Types**: TypeScript definitions need complete overhaul for payment functionality
+- **No Payment Logic**: All payment-specific functionality needs to be implemented
+
+### Development Priorities
+1. **Security First**: All payment-related functionality must prioritize security
+2. **Privacy Compliance**: Zero personal data collection, minimal permissions
+3. **Performance**: Efficient app detection and caching mechanisms
+4. **Cross-Platform**: Consistent API across Android, iOS, and Web
+
+### Architecture Decisions
+- **Expo Modules**: Chosen over pure React Native for easier maintenance
+- **TypeScript**: Strict typing for financial application safety
+- **Native Implementation**: Platform-specific optimizations for app detection
+- **Security-First**: All features designed with security as primary concern
+
+## Code Patterns & Conventions
+
+### File Naming
+- Native modules: `PlexModule.kt` (Android), `PlexModule.swift` (iOS)
+- Type definitions: `Plex.types.ts` with comprehensive interfaces
+- Platform-specific: `.android.ts`, `.ios.ts`, `.web.ts` extensions
+
+### API Design Philosophy
+- **Promise-based**: All async operations return Promises
+- **Event-driven**: Native events for app changes and security alerts
+- **Type-safe**: Comprehensive TypeScript interfaces for all data structures
+- **Error-handling**: Graceful degradation and comprehensive error reporting
+
+## Testing Strategy
+- **Unit Tests**: Jest with React Native Testing Library
+- **Integration Tests**: Cross-platform module testing
+- **Security Tests**: App verification and device security testing
+- **Performance Tests**: Memory usage and response time optimization
+
+## When Working on This Project
+1. **Always check [README.md](mdc:README.md)** for the latest architecture and implementation details
+2. **Refer to [TODO.md](mdc:TODO.md)** for current sprint tasks and priorities
+3. **Update TypeScript types first** before implementing native functionality
+4. **Consider security implications** for all payment-related features
+5. **Test on both platforms** (Android and iOS) for consistency
+6. **Document security decisions** and compliance measures
+
+## Common Development Tasks
+- **Adding new payment apps**: Update payment app database and detection logic
+- **Implementing security features**: Always test on rooted/jailbroken devices
+- **Regional customization**: Consider cultural and regulatory differences
+- **Performance optimization**: Profile memory usage and response times
+- **Privacy compliance**: Audit data collection and storage practices
+
+This project is in active development and requires careful attention to security, privacy, and cross-platform consistency.
