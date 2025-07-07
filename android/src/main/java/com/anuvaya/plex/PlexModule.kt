@@ -10,7 +10,7 @@ class PlexModule : Module() {
     PaymentAppInfo("com.google.android.apps.nfc.payment", "Google Pay", "tez"),
     PaymentAppInfo("com.phonepe.app", "PhonePe", "phonepe"),
     PaymentAppInfo("net.one97.paytm", "Paytm", "paytmmp"),
-    PaymentAppInfo("com.credavenue.cred", "CRED", "credpay"),
+    PaymentAppInfo("com.dreamplug.androidapp", "CRED", "credpay"),
     PaymentAppInfo("com.mobikwik_new", "MobiKwik", "mobikwik"),
     PaymentAppInfo("com.freecharge.android", "FreeCharge", "freecharge"),
     PaymentAppInfo("in.fampay.app", "FamPay", "in.fampay.app"),
