@@ -1,15 +1,7 @@
-import { registerWebModule, NativeModule } from 'expo';
+import { registerWebModule, NativeModule } from "expo"
 
-import { PlexModuleEvents } from './Plex.types';
+import { PlexModuleEvents } from "./Plex.types"
 
-class PlexModule extends NativeModule<PlexModuleEvents> {
-  PI = Math.PI;
-  async setValueAsync(value: string): Promise<void> {
-    this.emit('onChange', { value });
-  }
-  hello() {
-    return 'Hello world! 👋';
-  }
-}
+class PlexModule extends NativeModule<PlexModuleEvents> {}
 
-export default registerWebModule(PlexModule, 'PlexModule');
+export default registerWebModule(PlexModule, "PlexModule")
