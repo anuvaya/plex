@@ -7,7 +7,7 @@ import android.content.pm.ApplicationInfo
 
 class PlexModule : Module() {
   private val paymentApps = listOf(
-    PaymentAppInfo("com.google.android.apps.nfc.payment", "Google Pay", "tez"),
+    PaymentAppInfo("com.google.android.apps.nbu.paisa.user", "Google Pay", "tez"),
     PaymentAppInfo("com.phonepe.app", "PhonePe", "phonepe"),
     PaymentAppInfo("net.one97.paytm", "Paytm", "paytmmp"),
     PaymentAppInfo("com.dreamplug.androidapp", "CRED", "credpay"),
