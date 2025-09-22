@@ -25,5 +25,6 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
   }
 
-  s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
+  # Only include the files we actually ship
+  s.source_files = "PlexModule.swift"
 end

@@ -2,8 +2,14 @@ package com.anuvaya.plex
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import expo.modules.kotlin.Promise
 import android.content.pm.PackageManager
-import android.content.pm.ApplicationInfo
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.InstallStatus
 
 class PlexModule : Module() {
   private val paymentApps = listOf(
@@ -46,12 +52,141 @@ class PlexModule : Module() {
       )
     }
 
-    View(PlexView::class) {
-      Prop("url") { view: PlexView, url: java.net.URL ->
-        view.webView.loadUrl(url.toString())
+    AsyncFunction("checkForUpdate") { options: Map<String, Any?>?, promise: Promise ->
+      val context = appContext.reactContext
+      if (context == null) {
+        promise.resolve(
+          mapOf(
+            "platform" to "android",
+            "isAvailable" to false,
+            "recommendedType" to "none",
+            "localVersion" to ""
+          )
+        )
+        return@AsyncFunction
       }
-      Events("onLoad")
+
+      val pm = context.packageManager
+      val localVersion = try {
+        val pInfo = pm.getPackageInfo(context.packageName, 0)
+        pInfo.versionName ?: ""
+      } catch (e: Exception) { "" }
+
+      val manager: AppUpdateManager = AppUpdateManagerFactory.create(context)
+      val task = manager.appUpdateInfo
+      task.addOnSuccessListener { info ->
+        val availability = info.updateAvailability()
+        var recommended = "none"
+        var isAvailable = false
+        if (availability == UpdateAvailability.UPDATE_AVAILABLE) {
+          isAvailable = true
+          recommended = when {
+            info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) -> "immediate"
+            info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) -> "flexible"
+            else -> "none"
+          }
+        }
+
+        val data = mutableMapOf<String, Any?>(
+          "platform" to "android",
+          "isAvailable" to isAvailable,
+          "recommendedType" to recommended,
+          "localVersion" to localVersion,
+        )
+
+        // Provide version code if available
+        try {
+          val code = info.availableVersionCode()
+          data["remoteVersion"] = code
+        } catch (_: Exception) {}
+
+        promise.resolve(data)
+      }
+      task.addOnFailureListener { e ->
+        promise.resolve(
+          mapOf(
+            "platform" to "android",
+            "isAvailable" to false,
+            "recommendedType" to "none",
+            "localVersion" to localVersion
+          )
+        )
+      }
     }
+
+    AsyncFunction("startUpdate") { options: Map<String, Any?>?, promise: Promise ->
+      val context = appContext.currentActivity ?: appContext.reactContext
+      val activity = appContext.currentActivity
+      if (context == null || activity == null) {
+        promise.resolve(mapOf("started" to false))
+        return@AsyncFunction
+      }
+
+      val manager: AppUpdateManager = AppUpdateManagerFactory.create(context)
+      val task = manager.appUpdateInfo
+      task.addOnSuccessListener { info ->
+        if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE) {
+          promise.resolve(mapOf("started" to false))
+          return@addOnSuccessListener
+        }
+
+        val requestedType = when ((options?.get("type") as? String)?.lowercase()) {
+          "immediate" -> AppUpdateType.IMMEDIATE
+          "flexible" -> AppUpdateType.FLEXIBLE
+          else -> null
+        }
+
+        val type = when {
+          requestedType != null && info.isUpdateTypeAllowed(requestedType) -> requestedType
+          info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) -> AppUpdateType.IMMEDIATE
+          info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) -> AppUpdateType.FLEXIBLE
+          else -> null
+        }
+
+        if (type == null) {
+          promise.resolve(mapOf("started" to false))
+          return@addOnSuccessListener
+        }
+
+        if (type == AppUpdateType.FLEXIBLE) {
+          // For flexible updates, auto-complete when downloaded
+          // Use object expression so we can unregister self
+          val objListener = object : InstallStateUpdatedListener {
+            override fun onStateUpdate(state: com.google.android.play.core.install.InstallState) {
+              when (state.installStatus()) {
+                InstallStatus.DOWNLOADED -> {
+                  manager.completeUpdate()
+                  manager.unregisterListener(this)
+                }
+                InstallStatus.INSTALLED, InstallStatus.FAILED, InstallStatus.CANCELED -> {
+                  manager.unregisterListener(this)
+                }
+                else -> {}
+              }
+            }
+          }
+          manager.registerListener(objListener)
+        }
+
+        try {
+          // Request code can be any integer; we don't need the result here
+          val REQUEST_CODE = 17362
+          manager.startUpdateFlowForResult(
+            info,
+            type,
+            activity,
+            REQUEST_CODE
+          )
+          promise.resolve(mapOf("started" to true))
+        } catch (e: Exception) {
+          promise.resolve(mapOf("started" to false))
+        }
+      }
+      task.addOnFailureListener {
+        promise.resolve(mapOf("started" to false))
+      }
+    }
+
   }
 
   private fun detectInstalledPaymentApps(): List<Map<String, Any>> {

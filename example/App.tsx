@@ -1,4 +1,10 @@
-import Plex, { PaymentApp, PaymentContext } from "plex"
+import Plex, {
+  PaymentApp,
+  PaymentContext,
+  UpdateInfo,
+  CheckUpdateOptions,
+  StartUpdateOptions,
+} from "plex"
 import {
   Button,
   SafeAreaView,
@@ -7,6 +13,7 @@ import {
   View,
   FlatList,
 } from "react-native"
+import { TextInput } from "react-native"
 import { useState, useEffect } from "react"
 
 export default function App() {
@@ -14,6 +21,13 @@ export default function App() {
     null
   )
   const [loading, setLoading] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [startingUpdate, setStartingUpdate] = useState(false)
+  const [bundleId, setBundleId] = useState("so.vaya.app")
+  const [appStoreId, setAppStoreId] = useState("6739033435")
+  const [countryCode, setCountryCode] = useState("in")
+  const [androidType, setAndroidType] = useState<"immediate" | "flexible" | "">("")
 
   const getPaymentContext = async () => {
     setLoading(true)
@@ -30,7 +44,62 @@ export default function App() {
 
   useEffect(() => {
     getPaymentContext()
+    // also check for update once
+    ;(async () => {
+      try {
+        setCheckingUpdate(true)
+        const options: CheckUpdateOptions = {
+          bundleId: bundleId || undefined,
+          appStoreId: appStoreId || undefined,
+          countryCode: countryCode || undefined,
+        }
+        const info = await Plex.checkForUpdate(options)
+        console.log("Update info:", info)
+        setUpdateInfo(info)
+      } catch (e) {
+        console.warn("checkForUpdate error", e)
+      } finally {
+        setCheckingUpdate(false)
+      }
+    })()
   }, [])
+
+  const onCheckForUpdate = async () => {
+    try {
+      setCheckingUpdate(true)
+      const options: CheckUpdateOptions = {
+        bundleId: bundleId || undefined,
+        appStoreId: appStoreId || undefined,
+        countryCode: countryCode || undefined,
+      }
+      const info = await Plex.checkForUpdate(options)
+      console.log("Update info:", info)
+      setUpdateInfo(info)
+    } catch (e) {
+      console.warn("checkForUpdate error", e)
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  const onStartUpdate = async () => {
+    try {
+      setStartingUpdate(true)
+      const options: StartUpdateOptions = {
+        type: (androidType || undefined) as any,
+        // iOS overrides for testing against App Store app
+        appStoreId: appStoreId || undefined,
+        bundleId: bundleId || undefined,
+        countryCode: countryCode || undefined,
+      }
+      const res = await Plex.startUpdate(options)
+      console.log("startUpdate:", res)
+    } catch (e) {
+      console.warn("startUpdate error", e)
+    } finally {
+      setStartingUpdate(false)
+    }
+  }
 
   const renderPaymentApp = ({ item }: { item: PaymentApp }) => (
     <View style={styles.paymentAppItem}>
@@ -74,6 +143,64 @@ export default function App() {
             onPress={getPaymentContext}
             disabled={loading}
           />
+        </Group>
+
+        <Group name="Updates">
+          <View style={{ gap: 8 }}>
+            <Text style={styles.label}>iOS options (testing)</Text>
+            <TextInput
+              placeholder="bundleId (override)"
+              value={bundleId}
+              onChangeText={setBundleId}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+            <TextInput
+              placeholder="appStoreId (numeric, e.g., 6739033435)"
+              value={appStoreId}
+              onChangeText={(t) => setAppStoreId(t.replace(/\D/g, ""))}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+            <TextInput
+              placeholder="countryCode (e.g., us, in)"
+              value={countryCode}
+              onChangeText={setCountryCode}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Android option</Text>
+            <TextInput
+              placeholder="type: immediate | flexible"
+              value={androidType}
+              onChangeText={(t) => setAndroidType((t as any) ?? "")}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+            <Button
+              title={checkingUpdate ? "Checking..." : "Check for Update"}
+              onPress={onCheckForUpdate}
+              disabled={checkingUpdate}
+            />
+            <Button
+              title={startingUpdate ? "Starting..." : "Start Update"}
+              onPress={onStartUpdate}
+              disabled={startingUpdate || !(updateInfo?.isAvailable)}
+              color={updateInfo?.isAvailable ? undefined : "#999"}
+            />
+            {updateInfo && (
+              <View>
+                <Text>Platform: {updateInfo.platform}</Text>
+                <Text>Available: {String(updateInfo.isAvailable)}</Text>
+                <Text>Recommended: {updateInfo.recommendedType}</Text>
+                <Text>Local: {updateInfo.localVersion}</Text>
+                {updateInfo.remoteVersion != null && (
+                  <Text>Remote: {String(updateInfo.remoteVersion)}</Text>
+                )}
+              </View>
+            )}
+          </View>
         </Group>
 
         <Group name="Payment Apps">
@@ -142,5 +269,16 @@ const styles = {
   appStatus: {
     fontSize: 14,
     fontWeight: "500" as const,
+  },
+  label: {
+    fontSize: 14,
+    color: "#555",
+  },
+  input: {
+    padding: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
   },
 }
